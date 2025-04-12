@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block content %}
+<h2>{{ item.Name }}</h2>
+<p>{{ item.Description }}</p>
+<p>Base Price: ${{ item.BasePrice }}</p>
+<h3>Bids</h3>
+<ul>
+    {% for bid in bids %}
+        <li>${{ bid.BidAmount }}</li>
+    {% else %}
+        <li>No bids yet.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

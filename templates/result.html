@@ -1,0 +1,68 @@
+{% extends "layout.html" %} {% block content %}
+<div style="max-width: 1000px; margin: 40px auto; padding: 20px">
+  <h2 style="text-align: center; margin-bottom: 30px">
+    Result for Query {{ query_id }}
+  </h2>
+  <h3 style="text-align: center; margin-bottom: 30px">{{comment}}</h3>
+  {% if rows %}
+  <div style="overflow-x: auto">
+    <table style="width: 100%; border-collapse: collapse; font-size: 16px">
+      <thead>
+        <tr>
+          {% for col in headers %}
+          <th
+            style="
+              text-align: left;
+              padding: 12px;
+              border-bottom: 2px solid #ddd;
+            "
+          >
+            {{ col }}
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr style="transition: background 0.2s ease-in-out">
+          {% for cell in row.values() %}
+          <td
+            style="
+              padding: 10px 12px;
+              border-bottom: 1px solid #eee;
+              word-break: break-word;
+            "
+          >
+            {{ cell }}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p style="text-align: center">No results found.</p>
+  {% endif %}
+
+  <div style="text-align: center; margin-top: 30px">
+    <a href="{{ url_for('queries') }}">
+      <button
+        style="
+          padding: 10px 20px;
+          font-size: 16px;
+          border: 1px solid #ccc;
+          border-radius: 8px;
+          background: white;
+          cursor: pointer;
+          transition: transform 0.1s ease-in-out;
+        "
+        onmouseover="this.style.transform='scale(1.03)'"
+        onmouseout="this.style.transform='scale(1)'"
+      >
+        Back to Queries
+      </button>
+    </a>
+  </div>
+</div>
+{% endblock %}
