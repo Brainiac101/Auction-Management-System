@@ -49,12 +49,12 @@ LEFT JOIN Item I ON C.CategoryID = I.CategoryID
 GROUP BY C.Title;
 
 -- 8. Get all bidders who have exceeded their bid limit
-SELECT B.UserID, U.Username, B.AuctionID, B.BidLimit, MAX(Bid.BidAmount) AS TotalBids
-FROM Bidder B
-JOIN User U ON B.UserID = U.UserID
-JOIN Bid ON B.UserID = Bid.BidderID
-GROUP BY B.UserID, B.AuctionID, B.ItemID
-HAVING MAX(Bid.BidAmount) > B.BidLimit;
+--SELECT B.UserID, U.Username, B.AuctionID, B.BidLimit, MAX(Bid.BidAmount) AS TotalBids
+--FROM Bidder B
+--JOIN User U ON B.UserID = U.UserID
+--JOIN Bid ON B.UserID = Bid.BidderID
+--GROUP BY B.UserID, B.AuctionID, B.ItemID
+--HAVING MAX(Bid.BidAmount) > B.BidLimit;
 
 -- 8. Find users who have participated as both sellers and bidders
 SELECT DISTINCT U.UserID, U.Username
