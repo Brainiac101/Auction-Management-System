@@ -45,7 +45,7 @@ HAVING COUNT(b.BidAmount) = (
 FROM Bid B
 JOIN User U ON B.BidderID = U.UserID
 JOIN Item I ON B.ItemID = I.ItemID
-WHERE B.AuctionID = 1;''', 
+WHERE B.AuctionID = %s;''', 
      15: '''SELECT
     b.UserID, 
     u.Username, 
@@ -212,15 +212,59 @@ def queries():
     global db
     return render_template('queries.html')
 
+@app.route('/input_query/<int:query_id>', methods=['GET', 'POST'])
+def input_query(query_id):
+    if query_id == 14:
+        if request.method == 'POST':
+            auction_id = request.form['auction_id']
+            return redirect(url_for('run_query', query_id=query_id, auction_id=auction_id))
+        return render_template('query_input.html', query_id=query_id, description=d1[query_id])
+    else:
+        return redirect(url_for('run_query', query_id=query_id))
+
+
+def run_query2(query_id):
+    global db
+    cursor = db.cursor(dictionary=True)
+    query = d.get(query_id)
+
+    try:
+        if query_id == 14:
+            auction_id = request.args.get('auction_id', type=int)
+            if not auction_id:
+                flash("Auction ID is required for this query.", "warning")
+                return redirect(url_for('input_query', query_id=query_id))
+
+            cursor.execute(query, (auction_id,))
+        else:
+            cursor.execute(query)
+
+        results = cursor.fetchall()
+        return render_template('result.html', results=results, description=d1[query_id])
+    finally:
+        cursor.close()
+
+
 @app.route('/run_query/<int:query_id>')
 def run_query(query_id):
     global db
     query = d.get(query_id)
     cursor=db.cursor(dictionary=True)
+    
     try:
-        cursor.execute(query)
-        rows=cursor.fetchall()
-        headers = [description[0] for description in cursor.description]
+        if query_id == 14:
+            auction_id = request.args.get('auction_id', type=int)
+            if not auction_id:
+                flash("Auction ID is required for this query.", "warning")
+                return redirect(url_for('input_query', query_id=query_id))
+
+            cursor.execute(query, (auction_id,))
+            rows=cursor.fetchall()
+            headers = [description[0] for description in cursor.description]
+        else:
+            cursor.execute(query)
+            rows=cursor.fetchall()
+            headers = [description[0] for description in cursor.description]
     finally:
         cursor.close()
     comment=d1[query_id]
