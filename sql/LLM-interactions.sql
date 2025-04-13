@@ -73,17 +73,16 @@ ORDER BY U.Username;
 -- Error 
 
 -- Fix: Remove ORDER BY clause
-USE auction;
-SELECT U.Username, COUNT(DISTINCT A.AuctionID) AS NumAuctions
+SELECT U.Username, COUNT(*) AS NumAuctions
 FROM User U
-LEFT JOIN Bidder B ON U.UserID = B.UserID
-LEFT JOIN Auction A ON B.AuctionID = A.AuctionID
+JOIN Bidder B ON U.UserID = B.UserID
+JOIN Auction A ON B.AuctionID = A.AuctionID
 GROUP BY U.UserID, U.Username
 UNION ALL
-SELECT U.Username, COUNT(DISTINCT A.AuctionID) AS NumAuctions
+SELECT U.Username, COUNT(*) AS NumAuctions
 FROM User U
-LEFT JOIN Seller S ON U.UserID = S.UserID
-LEFT JOIN Item I ON S.ItemID = I.ItemID
-LEFT JOIN Auction A ON I.ItemID = A.ItemID
-GROUP BY U.UserID, U.Username
-ORDER BY Username;
+JOIN Seller S ON U.UserID = S.UserID
+JOIN Item I ON S.ItemID = I.ItemID
+JOIN Auction A ON I.ItemID = A.ItemID
+GROUP BY U.UserID, U.Username;
+
