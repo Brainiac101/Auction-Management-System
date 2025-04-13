@@ -1,0 +1,15 @@
+<!-- templates/query_input.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Input Required</title>
+</head>
+<body>
+    <h2>{{ description }}</h2>
+    <form method="POST">
+        <label for="auction_id">Enter Auction ID:</label>
+        <input type="number" name="auction_id" id="auction_id" required>
+        <input type="submit" value="Run Query">
+    </form>
+</body>
+</html>
