@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import mysql.connector
 import os
 import sys
+from mysql.connector import Error
 
 d = {1: '''SELECT I.ItemID, I.Name, I.Description, C.Title AS CategoryTitle FROM Item I JOIN Category C ON I.CategoryID = C.CategoryID;''',
      2: '''SELECT A.AuctionID, I.Name AS ItemName, MAX(B.BidAmount) AS HighestBid FROM Bid B JOIN Auction A ON B.AuctionID = A.AuctionID JOIN Item I ON A.ItemID = I.ItemID GROUP BY A.AuctionID, I.Name;''',
@@ -57,7 +58,7 @@ JOIN Bid bd ON b.UserID = bd.BidderID
     AND b.AuctionID = bd.AuctionID 
     AND b.ItemID = bd.ItemID
 WHERE bd.BidAmount > b.BidLimit;''',
-     16: '''USE auction;
+     16: '''
 SELECT U.Username, COUNT(DISTINCT A.AuctionID) AS NumAuctions
 FROM User U
 LEFT JOIN Bidder B ON U.UserID = B.UserID
@@ -155,7 +156,7 @@ def register():
         password = request.form['password']
         balance = request.form['balance']
 
-        cursor = db.cursor()
+        cursor = db.cursor(dictionary=True)
         try:
             cursor.execute("""
                 INSERT INTO User (Username, Password, Balance) 
@@ -164,7 +165,7 @@ def register():
             db.commit()
             flash("Registration successful!", "success")
             return redirect(url_for('auctions'))
-        except db.Error as e:
+        except Error as e:
             db.rollback()
             flash(f"Error: {e}", "danger")
         finally:
