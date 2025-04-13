@@ -16,6 +16,61 @@ d = {1: '''SELECT I.ItemID, I.Name, I.Description, C.Title AS CategoryTitle FROM
 FROM User U
 JOIN Seller S ON U.UserID = S.UserID
 JOIN Bidder B ON U.UserID = B.UserID;
+''',
+11:'''SELECT B.BidderID, U.Username, SUM(B.BidAmount) AS TotalBidAmount
+FROM Bid B
+JOIN User U ON B.BidderID = U.UserID
+GROUP BY B.BidderID, U.Username
+ORDER BY TotalBidAmount DESC
+LIMIT 3;''',
+     12: '''SELECT AuctionID, ItemID, Duration 
+FROM Auction 
+WHERE Duration > (
+    SELECT AVG(Duration) FROM Auction
+);''', 
+     13: '''SELECT u.UserID, u.Username, b.AuctionID, COUNT(b.BidAmount) AS TotalBids
+FROM User u
+JOIN Bid b ON u.UserID = b.BidderID
+GROUP BY b.AuctionID, u.UserID, u.Username
+HAVING COUNT(b.BidAmount) = (
+    SELECT MAX(BidCount)
+    FROM (
+        SELECT AuctionID, BidderID, COUNT(BidAmount) AS BidCount
+        FROM Bid
+        GROUP BY AuctionID, BidderID
+    ) AS BidStats
+    WHERE BidStats.AuctionID = b.AuctionID
+);''', 
+     14: '''SELECT B.BidderID, U.Username, U.Balance, B.BidAmount, B.AuctionID, I.Name AS ItemName
+FROM Bid B
+JOIN User U ON B.BidderID = U.UserID
+JOIN Item I ON B.ItemID = I.ItemID
+WHERE B.AuctionID = 1;''', 
+     15: '''SELECT
+    b.UserID, 
+    u.Username, 
+    b.BidLimit, 
+    bd.BidAmount
+FROM Bidder b
+JOIN User u ON b.UserID = u.UserID
+JOIN Bid bd ON b.UserID = bd.BidderID 
+    AND b.AuctionID = bd.AuctionID 
+    AND b.ItemID = bd.ItemID
+WHERE bd.BidAmount > b.BidLimit;''',
+     16: '''USE auction;
+SELECT U.Username, COUNT(DISTINCT A.AuctionID) AS NumAuctions
+FROM User U
+LEFT JOIN Bidder B ON U.UserID = B.UserID
+LEFT JOIN Auction A ON B.AuctionID = A.AuctionID
+GROUP BY U.UserID, U.Username
+UNION ALL
+SELECT U.Username, COUNT(DISTINCT A.AuctionID) AS NumAuctions
+FROM User U
+LEFT JOIN Seller S ON U.UserID = S.UserID
+LEFT JOIN Item I ON S.ItemID = I.ItemID
+LEFT JOIN Auction A ON I.ItemID = A.ItemID
+GROUP BY U.UserID, U.Username
+ORDER BY Username;
 '''}
 d1 = {1: '''Retrieve all items with their respective category titles.''',
      2: '''Get the highest bid for each auction.''',
@@ -26,8 +81,14 @@ d1 = {1: '''Retrieve all items with their respective category titles.''',
      7: '''Find items that were auctioned more than once.''', 
      8: '''Find the Latest auction for each time.''', 
      9: '''Find Users Who Have Placed the Most Bids in any Auction.''',
-     10: '''Find users who have participated as both sellers and bidders'''}
-
+     10: '''Find users who have participated as both sellers and bidders''',
+     11:'''Get the top 3 bidders who have placed the highest total bid amount''',
+     12: '''Find Auctions That Lasted Longer Than the Average Duration''', 
+     13: '''Find Users Who Have Placed the Most Bids in every Auction''', 
+     14: '''Retrieve all bids for a specific auction along with bidder details''', 
+     15: '''Get all bidders who have exceeded their bid limit''',
+     16: '''Get a list of users and the number of auctions they have participated in (either as a bidder or as a seller)'''}
+#5,9,13
 def initialize_database():
     # Temporary connection to check/create database
     temp_db = mysql.connector.connect(
