@@ -1,0 +1,88 @@
+{% extends "layout.html" %} {% block content %}
+
+<style>
+  .profile-container {
+    padding: 2rem;
+  }
+
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .card {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+
+  .card h3 {
+    margin-top: 0;
+    color: #007bff;
+  }
+
+  .card p {
+    margin: 0.3rem 0;
+  }
+
+  .no-bids {
+    font-style: italic;
+    color: #888;
+  }
+</style>
+
+<div class="profile-container">
+  <h2>Your Active Bids</h2>
+
+  {% if items %}
+  <div class="card-container">
+    {% for item in items %}
+    <div class="card">
+      <h3>
+        <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
+          {{ item.Name }}
+        </a>
+      </h3>
+      <p><strong>Category:</strong> {{ item.Category }}</p>
+      <p>
+        <strong>Highest Bid:</strong>
+        {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
+        <span class="no-bids">No bids yet</span>
+        {% endif %}
+      </p>
+      <p><strong>End Time:</strong> {{ item.EndTime }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="no-bids">You have not placed any active bids.</p>
+  {% endif %}
+  <h2>Your Winnings</h2>
+
+  {% if items %}
+  <div class="card-container">
+    {% for item in items1 %}
+    <div class="card">
+      <h3>
+        <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
+          {{ item.Name }}
+        </a>
+      </h3>
+      <p><strong>Category:</strong> {{ item.Category }}</p>
+      <p>
+        <strong>Highest Bid:</strong>
+        {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
+        <span class="no-bids">No bids yet</span>
+        {% endif %}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

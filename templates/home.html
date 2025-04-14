@@ -1,0 +1,126 @@
+{% extends "layout.html" %} {% block title %}Home - Auction Platform{% endblock
+%} {% block content %}
+
+<style>
+  .page-header {
+    padding: 3rem;
+    background: linear-gradient(to right, #f9f9f9, #e6e6e6);
+    border-bottom: 1px solid #ccc;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    font-size: 2rem; /* reduced from 2.5rem */
+    color: #333;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  .search-form {
+    display: inline-flex;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .search-form input[type="text"] {
+    padding: 0.4rem 0.8rem;
+    width: 220px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem; /* reduced */
+  }
+
+  .search-form button {
+    padding: 0.4rem 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem; /* reduced */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  .search-form button:hover {
+    background-color: #0056b3;
+  }
+
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.8rem;
+    width: 280px;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    font-size: 1rem; /* reduced */
+  }
+
+  .card h3 {
+    margin-top: 0;
+    font-size: 1.1rem; /* reduced */
+  }
+
+  .card p {
+    margin: 0.4rem 0;
+  }
+
+  .card a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+    font-size: 1.3rem; /* reduced */
+  }
+
+  .card a:hover {
+    text-decoration: underline;
+  }
+
+  h2 {
+    font-size: 1.5rem; /* reduced */
+  }
+</style>
+
+<main>
+  <header class="page-header">
+    <h1>Welcome to the Auction Platform</h1>
+    <form method="GET" action="{{ url_for('search') }}" class="search-form">
+      <input type="text" name="q" placeholder="Search items..." />
+      <button type="submit">Search</button>
+    </form>
+  </header>
+
+  <h2>Currently Running Auctions</h2>
+  {% if items %}
+  <div class="card-container">
+    {% for item in items %}
+    <div class="card">
+      <h3>
+        <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
+          {{ item.Name }}
+        </a>
+      </h3>
+      <p><strong>Category:</strong> {{ item.Category }}</p>
+      <p>
+        <strong>Current Highest Bid:</strong>
+        {% if item.HighestBid == "No bids placed yet" %} {{ item.HighestBid }}
+        {% else %} ₹{{ item.HighestBid }} {% endif %}
+      </p>
+      <p><strong>Base Price:</strong> ₹{{ item.BasePrice }}</p>
+      <p><strong>Ends at:</strong> {{ item.EndTime }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No auctions running at the moment.</p>
+  {% endif %}
+</main>
+
+{% endblock %}

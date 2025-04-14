@@ -1,8 +1,59 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask_apscheduler import APScheduler
+from datetime import datetime
 import mysql.connector
 import os
 import sys
 from mysql.connector import Error
+
+app = Flask(__name__)
+class Config:
+    SCHEDULER_API_ENABLED = True
+
+app.config.from_object(Config())
+scheduler = APScheduler()
+scheduler.init_app(app)
+
+
+@scheduler.task('interval', id='check_auctions', seconds=60)
+def check_ended_auctions():
+    with app.app_context():
+        global db
+        if(db != None):
+            cursor = db.cursor(dictionary=True)
+            start_time = datetime.now()
+            # Find auctions that just ended
+            cursor.execute("""
+                SELECT A.AuctionID, A.ItemID, MAX(B.BidAmount) AS HighestBid
+                FROM Auction A JOIN Bid B
+                ON A.AuctionID = B.AuctionID AND A.ItemID = B.ItemID
+                WHERE A.EndTime <= %s
+                GROUP BY A.AuctionID, A.ItemID
+            """, (start_time,))
+            ended_auctions = cursor.fetchall()
+            print("*" * 20)
+            print("\n",ended_auctions,"\n")
+            print("*" * 20)
+
+            for auction in ended_auctions:
+                auction_id = auction['AuctionID']
+                item_id = auction['ItemID']
+                highest_bid = auction['HighestBid']
+                cursor.execute("""
+                    SELECT BidderID, BidAmount FROM Bid
+                    WHERE AuctionID = %s AND ItemID = %s
+                    ORDER BY BidAmount DESC LIMIT 1
+                """, (auction_id, item_id))
+
+                winner = cursor.fetchone()
+                if winner:
+                    print(winner['BidderID'])
+                    cursor.execute("""UPDATE Item SET WinnerID = %s WHERE ItemID = %s""", (winner['BidderID'], item_id))
+                    db.commit()
+                    cursor.execute("""UPDATE Seller Set TotalSales = %s Where ItemID = %s""", (winner['BidAmount'], item_id))
+                    db.commit()
+
+            cursor.close()
 
 d = {1: '''SELECT I.ItemID, I.Name, I.Description, C.Title AS CategoryTitle FROM Item I JOIN Category C ON I.CategoryID = C.CategoryID;''',
      2: '''SELECT A.AuctionID, I.Name AS ItemName, MAX(B.BidAmount) AS HighestBid FROM Bid B JOIN Auction A ON B.AuctionID = A.AuctionID JOIN Item I ON A.ItemID = I.ItemID GROUP BY A.AuctionID, I.Name;''',
@@ -71,7 +122,6 @@ JOIN Seller S ON U.UserID = S.UserID
 JOIN Item I ON S.ItemID = I.ItemID
 JOIN Auction A ON I.ItemID = A.ItemID
 GROUP BY U.UserID, U.Username;
-
 '''}
 d1 = {1: '''Retrieve all items with their respective category titles.''',
      2: '''Get the highest bid for each auction.''',
@@ -146,7 +196,27 @@ app.secret_key = "auction_secret"
 
 @app.route('/')
 def home():
-    return redirect(url_for('auctions'))
+    global db
+    cursor = db.cursor(dictionary=True)
+    try:
+        
+        cursor.execute("""
+            SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
+            a.StartTime, a.EndTime, MAX(B.BidAmount) AS HighestBid
+            FROM Item i 
+            JOIN Auction a ON i.ItemID = a.ItemID 
+            LEFT Join Bid B on a.AuctionID = B.AuctionID AND i.ItemID = B.ItemID
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID WHERE a.EndTime > NOW()
+            GROUP BY i.ItemID, a.AuctionID
+            LIMIT 5
+        """)
+        items = cursor.fetchall()
+        for i in items:
+            if i['HighestBid'] == None:
+                i['HighestBid']= "No bids placed yet"
+    finally:
+        cursor.close()
+    return render_template('home.html', items=items, current_page=request.endpoint)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -173,6 +243,134 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    global db
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        cursor = db.cursor(dictionary=True)
+        try:
+            cursor.execute("""SELECT * FROM User WHERE Username = (%s) AND Password = (%s)""", (username, password))
+
+            items = cursor.fetchone()
+            if(len(items) == 0):
+                flash("Invalid username or password", "danger")
+                return redirect(url_for('login'))
+            else:
+                session['user_id']=items['Username']
+                session['password']=items['Password']
+                session['balance']=float(items['Balance'])
+                session['primary']=items['UserID']
+            # flash("Registration successful!", "success")
+            return redirect(url_for('home'))
+        
+        except Error as e:
+            db.rollback()
+            flash(f"Error: {e}", "danger")
+        finally:
+            cursor.close()
+
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/search')
+def search():
+    global db
+    query = request.args.get('q', '')
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category 
+            FROM Item i
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID
+            WHERE i.Name LIKE %s OR c.Title LIKE %s
+        """, ('%' + query + '%', '%' + query + '%'))
+        results = cursor.fetchall()
+    finally:    
+        cursor.close()
+    return render_template('search_results.html', results=results, query=query)
+
+@app.route('/seller_profile')
+def seller_profile():
+    global db
+    if session['user_id'] == None:
+        return redirect(url_for('login'))
+    else:
+        cursor=db.cursor(dictionary=True, buffered=True)
+        cursor1=db.cursor(dictionary=True, buffered=True)
+        cursor2=db.cursor(dictionary=True, buffered=True)
+        cursor3=db.cursor(dictionary=True, buffered=True)
+        try:
+            cursor3.execute("SELECT * FROM Seller where UserID=%s",(session['primary'],))
+            user=cursor3.fetchone()
+
+            cursor1.execute("SELECT * from Item i join Seller s on i.ItemID=s.ItemID where s.UserID=%s and i.WinnerID is NULL and i.ItemID not in (SELECT a.itemID from Auction A);",(session['primary'],))
+            items1=cursor1.fetchall()
+            print(items1)
+
+            cursor2.execute("SELECT * FROM Item I JOIN Seller S ON I.ItemID = S.ItemID WHERE S.UserID = %s AND I.WinnerID IS NOT NULL", (session['primary'],))
+            items2 = cursor2.fetchall()
+            print(items2)
+            
+            cursor.execute("SELECT * FROM Item I JOIN Seller S ON I.ItemID = S.ItemID JOIN Auction A ON I.ItemID = A.ItemID WHERE S.UserID = %s AND A.EndTime > NOW()", (session['primary'],))
+            items = cursor.fetchall()
+
+            cursor1.execute("SELECT SUM(TotalSales) AS sales FROM Seller WHERE UserID=%s GROUP BY UserID;",(session['primary'],))
+            sales=cursor1.fetchone()
+            sales = sales['sales'] if sales else None
+
+            cursor2.execute("SELECT DISTINCT C.Title FROM Category AS C;")
+            categories = cursor2.fetchall()
+
+        finally:
+            cursor1.close()
+            cursor2.close()
+            cursor3.close()
+            cursor.close()
+    return render_template('seller_profile.html', user=user, items = items, items1 = items1, items2 = items2, sales=sales, categories=categories)
+
+@app.route('/bidder_profile')
+def bidder_profile():
+    global db
+    cursor = db.cursor(dictionary=True)
+    try:
+        # cursor.execute("SELECT B.Item_ID, MAX(BidAmount)  from Bid B join Auction A on A.AuctionID=B.AuctionID and A.ItemID=B.ItemID where B.User_ID=%s and A.EndTime>NOW() GROUP BY A.AuctionID, I.ItemID, B.BidderID", (session['primary'],))       
+        
+
+        cursor.execute("""
+            SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
+            a.StartTime, a.EndTime, MAX(B.BidAmount) AS HighestBid
+            FROM Item i 
+            JOIN Auction a ON i.ItemID = a.ItemID 
+            LEFT Join Bid B on a.AuctionID = B.AuctionID AND i.ItemID = B.ItemID
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID WHERE a.EndTime > NOW()
+            AND B.BidderID = %s
+            GROUP BY i.ItemID, a.AuctionID
+        """, (session['primary'],))
+        result=cursor.fetchall()
+        
+        cursor.execute("""SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, MAX(B.BidAmount) AS HighestBid FROM Item i JOIN Auction a ON i.ItemID = a.ItemID 
+            LEFT Join Bid B on a.AuctionID = B.AuctionID AND i.ItemID = B.ItemID
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID WHERE i.WinnerID = %s
+            GROUP BY i.ItemID, a.AuctionID
+        """, (session['primary'],))
+        result1=cursor.fetchall()
+        # resultID=result['B.Item_ID']
+        # resultMax=result['MAX(BidAmount)']
+        # cursor.execute("SELECT * FROM Item where Item_ID=%s",(resultID,))
+        # item=cursor.fetchall()
+        return render_template('bidder_profile.html',items=result, items1=result1) 
+    except Error as e:
+        flash('Error','danger')
+    finally:
+        cursor.close()
+
 @app.route('/auctions')
 def auctions():
     global db
@@ -180,38 +378,192 @@ def auctions():
     try:
         cursor.execute("""
             SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
-                   a.StartTime, a.EndTime 
+            a.StartTime, a.EndTime, MAX(B.BidAmount) AS HighestBid
             FROM Item i 
             JOIN Auction a ON i.ItemID = a.ItemID 
-            LEFT JOIN Category c ON i.CategoryID = c.CategoryID
+            LEFT Join Bid B on a.AuctionID = B.AuctionID AND i.ItemID = B.ItemID
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID WHERE a.EndTime > NOW()
+            GROUP BY i.ItemID, a.AuctionID
         """)
         items = cursor.fetchall()
+        for i in items:
+            if i['HighestBid'] == None:
+                i['HighestBid']= "No bids placed yet"
     finally:
         cursor.close()
-    return render_template('auctions.html', items=items)
+    return render_template('auctions.html', items=items,current_page=request.endpoint)
 
 @app.route('/item/<int:item_id>')
 def item_detail(item_id):
     global db
     cursor = db.cursor(dictionary=True)
     try:
+        cursor.execute("""SELECT AuctionID from Auction where ItemID = %s AND Auction.EndTime > NOW()""", (item_id,))
+        auction = cursor.fetchone()
+        if auction is None:
+            flash("This item is not available for bidding.", "warning")
+            return redirect(url_for('home'))
+        auction_id = auction['AuctionID']
         cursor.execute("SELECT * FROM Item WHERE ItemID = %s", (item_id,))
         item = cursor.fetchone()
         cursor.execute("""
             SELECT BidAmount 
             FROM Bid 
-            WHERE ItemID = %s 
+            WHERE ItemID = %s AND AuctionID = %s
             ORDER BY BidAmount DESC
-        """, (item_id,))
+            LIMIT 5
+        """, (item_id, auction_id))
         bids = cursor.fetchall()
     finally:
         cursor.close()
     return render_template('item_detail.html', item=item, bids=bids)
 
+@app.route('/item1/<int:item_id>')
+def item_detail1(item_id):
+    global db
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""SELECT AuctionID from Auction where ItemID = %s AND Auction.EndTime > NOW()""", (item_id,))
+        auction = cursor.fetchone()
+        if auction is None:
+            cursor.execute("""SELECT * from Item where ItemID = %s""", (item_id,))
+            item = cursor.fetchone()
+            return render_template('item_detail1.html', item=item, bids = {})
+        auction_id = auction['AuctionID']
+        cursor.execute("SELECT * FROM Item WHERE ItemID = %s", (item_id,))
+        item = cursor.fetchone()
+        cursor.execute("""
+            SELECT BidAmount 
+            FROM Bid 
+            WHERE ItemID = %s AND AuctionID = %s
+            ORDER BY BidAmount DESC
+        """, (item_id, auction_id))
+        bids = cursor.fetchall()
+    finally:
+        cursor.close()
+    return render_template('item_detail1.html', item=item, bids=bids)
+
+@app.route('/add_item', methods=['GET', 'POST'])
+def add_item():
+    global db
+    cursor=db.cursor(dictionary=True)
+    if request.method=='POST':
+        name = request.form['name']
+        category = request.form['category']
+        base_price = request.form['base_price']
+        description = request.form['description']
+        image_url=request.form['image_url']
+    try:
+        cursor.execute("SELECT CategoryID FROM Category WHERE Title = %s", (category,))
+        category_id = cursor.fetchone()
+        category_id = category_id['CategoryID']
+        cursor.execute("INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID) VALUES (%s,%s,%s,%s,%s)", (name, description, image_url, base_price, category_id))
+        db.commit()
+        cursor.execute("SELECT ItemID FROM Item WHERE Name = %s AND Description = %s", (name, description))
+        item_id = cursor.fetchone()
+        item_id1 = item_id['ItemID']
+        cursor.execute("INSERT INTO Seller (UserID, ItemID) VALUES (%s,%s)", (session['primary'], item_id1))
+        db.commit()
+        flash('Item Added Succesfully')
+    finally:
+        cursor.close()
+    return redirect(url_for('seller_profile'))
+
+# @app.route('/schedule_auction/<int:item_id>',methods=['GET',"POST"])
+# def schedule_auction(item_id):
+#     global db
+#     cursor=db.cursor(dictionary=True)
+#     if request.method=='POST':
+#         date=request.form['end_time']
+#         cursor.execute("SELECT MAX(A.AuctionID) as maxi from Auction A")
+#         maxi=cursor.fetchone()
+#         maxi=maxi['maxi']+1
+#         cursor.execute("INSERT INTO Auction (AuctionID, ItemID, Duration, StartTime, EndTime) VALUES (%s,%s, %s - NOW(), NOW(),%s)",(maxi,item_id,date,date))
+
+@app.route('/schedule_auction/<int:item_id>', methods=['POST'])
+def schedule_auction(item_id):
+    global db
+    cursor = db.cursor(dictionary=True)
+
+    # Parse and convert
+    date_str = request.form['end_time']  # e.g., '2025-04-14T18:30'
+    end_time = datetime.strptime(date_str, "%Y-%m-%dT%H:%M")  # now it's a datetime object
+    start_time = datetime.now()
+    duration = end_time - start_time  # this is a timedelta
+    # Generate next AuctionID
+    cursor.execute("SELECT MAX(A.AuctionID) as maxi from Auction A")
+    maxi = cursor.fetchone()['maxi']
+    new_id = 1 if maxi is None else maxi + 1
+
+    # Insert with NOW() for StartTime and Duration as TIMESTAMPDIFF
+    cursor.execute("""
+        INSERT INTO Auction (AuctionID, ItemID, Duration, StartTime, EndTime)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (new_id, item_id, duration, start_time, end_time))
+
+    db.commit()
+    cursor.close()
+
+    return redirect(url_for('seller_profile'))
+
+@app.route('/bid/<int:item_id>')
+def bid(item_id):
+    global db
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("""SELECT AuctionID from Auction where ItemID = %s AND Auction.EndTime > NOW()""", (item_id,))
+        auction = cursor.fetchone()
+        if auction is None:
+            flash("This item is not available for bidding.", "warning")
+            return redirect(url_for('home'))
+        auction_id = auction['AuctionID']
+        cursor.execute("SELECT * FROM Item WHERE ItemID = %s", (item_id,))
+        item = cursor.fetchone()
+        cursor.execute("""
+            SELECT BidAmount 
+            FROM Bid 
+            WHERE ItemID = %s AND AuctionID = %s
+            ORDER BY BidAmount DESC
+        """, (item_id, auction_id))
+        bids = cursor.fetchall()
+        cursor.execute("""SELECT AuctionID from Auction where ItemID = %s AND Auction.EndTime > NOW()""", (item_id,))
+        auction = cursor.fetchone()
+        if auction is None:
+            flash("This item is not available for bidding.", "warning")
+            return redirect(url_for('home'))
+        
+        auction_id = auction['AuctionID']
+        cursor.execute("SELECT MAX(BidAmount) FROM Bid WHERE ItemID = %s AND AuctionID = %s", (item_id, auction_id))
+        max_bid = cursor.fetchone()
+        bidprice=0
+        print(max_bid)
+        if max_bid['MAX(BidAmount)'] is None:
+            cursor.execute('SELECT BasePrice FROM Item WHERE ItemID = %s', (item_id,))
+            base_price = cursor.fetchone()
+            bidprice = int(base_price['BasePrice'])
+        else:
+            bidprice = int(11 * (max_bid['MAX(BidAmount)'])/10) 
+        if bidprice <= float(session['balance']):
+            cursor.execute("SELECT UserID from Seller join Item on Seller.ItemID=Item.ItemID where Item.ItemID=%s",(item_id,))
+            result=cursor.fetchone()
+            if session['primary']==result['UserID']:
+                flash("You can't bid on your own item")
+                return redirect(url_for('home'))
+            cursor.execute("INSERT INTO Bid (BidderID, AuctionID, ItemID, BidAmount) VALUES (%s, %s, %s, %s)", (session['primary'], auction_id, item_id, bidprice))
+            db.commit()
+        else:
+            flash("Bid exceeds your balance, please add more money")
+    except Error as e:
+        db.rollback()
+        flash(f"Error: {e}", "danger")
+    finally:
+        cursor.close()
+    return redirect(url_for('item_detail',item_id=item_id))
+
 @app.route('/queries')
 def queries():
     global db
-    return render_template('queries.html')
+    return render_template('queries.html',current_page=request.endpoint)
 
 @app.route('/input_query/<int:query_id>', methods=['GET', 'POST'])
 def input_query(query_id):
@@ -222,7 +574,6 @@ def input_query(query_id):
         return render_template('query_input.html', query_id=query_id, description=d1[query_id])
     else:
         return redirect(url_for('run_query', query_id=query_id))
-
 
 def run_query2(query_id):
     global db
@@ -244,7 +595,6 @@ def run_query2(query_id):
         return render_template('result.html', results=results, description=d1[query_id])
     finally:
         cursor.close()
-
 
 @app.route('/run_query/<int:query_id>')
 def run_query(query_id):
@@ -270,8 +620,11 @@ def run_query(query_id):
         cursor.close()
     comment=d1[query_id]
     return render_template('result.html',rows=rows, headers=headers, query_id=query_id, comment=comment)
+
 if __name__ == '__main__':
+    
     arg1=sys.argv[1]
     arg2=sys.argv[2]
     db=initialize_database()
+    scheduler.start()
     app.run(debug=True)

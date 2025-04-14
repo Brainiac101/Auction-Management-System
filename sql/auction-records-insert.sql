@@ -112,7 +112,8 @@ INSERT INTO Category (Title) VALUES
 ('Furniture'),
 ('Jewelry'),
 ('Art'),
-('Vehicles');
+('Vehicles'),
+('Miscellaneous');
 
 -- Insert Items
 INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID, WinnerID) VALUES
@@ -130,17 +131,17 @@ INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID, WinnerID) 
 
 -- Insert Auctions (Some items are re-auctioned)
 INSERT INTO Auction (AuctionID, ItemID, Duration, StartTime, EndTime) VALUES
-(1, 1, '02:00:00', '2025-03-01 10:00:00', '2025-03-01 12:00:00'),
-(2, 2, '02:30:00', '2025-03-02 14:00:00', '2025-03-02 16:30:00'),
-(3, 3, '03:00:00', '2025-03-03 11:00:00', '2025-03-03 14:00:00'),
-(4, 4, '02:15:00', '2025-03-04 09:00:00', '2025-03-04 11:15:00'),
-(5, 5, '04:00:00', '2025-03-05 15:00:00', '2025-03-05 19:00:00'),
-(6, 6, '02:00:00', '2025-03-06 12:00:00', '2025-03-06 14:00:00'),
-(7, 7, '01:30:00', '2025-03-07 16:00:00', '2025-03-07 17:30:00'),
-(8, 8, '02:45:00', '2025-03-08 10:00:00', '2025-03-08 12:45:00'),
-(9, 9, '02:30:00', '2025-03-09 14:30:00', '2025-03-09 17:00:00'),
-(10, 10, '03:30:00', '2025-03-10 13:00:00', '2025-03-10 16:30:00'),
-(11, 1, '02:00:00', '2025-03-11 10:00:00', '2025-03-11 12:00:00'); -- Re-auctioned
+(1, 1, '02:00:00', '2025-03-01 10:00:00', '2025-04-01 12:00:00'),
+(2, 2, '02:30:00', '2025-03-02 14:00:00', '2025-04-14 21:48:59'),
+(3, 3, '03:00:00', '2025-03-03 11:00:00', '2025-06-03 14:00:00'),
+(4, 4, '02:15:00', '2025-03-04 09:00:00', '2025-06-04 11:15:00'),
+(5, 5, '04:00:00', '2025-03-05 15:00:00', '2025-06-05 19:00:00'),
+(6, 6, '02:00:00', '2025-03-06 12:00:00', '2025-06-06 14:00:00'),
+(7, 7, '01:30:00', '2025-03-07 16:00:00', '2025-06-07 17:30:00'),
+(8, 8, '02:45:00', '2025-03-08 10:00:00', '2025-06-08 12:45:00'),
+(9, 9, '02:30:00', '2025-03-09 14:30:00', '2025-06-09 17:00:00'),
+(10, 10, '03:30:00', '2025-03-10 13:00:00', '2025-06-10 16:30:00'),
+(11, 1, '02:00:00', '2025-03-11 10:00:00', '2025-06-11 12:00:00'); -- Re-auctioned
 
 -- Insert Sellers (Some sell multiple items)
 INSERT INTO Seller (UserID, ItemID, TotalSales) VALUES
@@ -159,7 +160,6 @@ INSERT INTO Seller (UserID, ItemID, TotalSales) VALUES
 
 -- Insert Bidders (Each bids on multiple items)
 INSERT INTO Bidder (UserID, AuctionID, ItemID, BidLimit) VALUES
-(3, 1, 1, 750.00),
 (4, 2, 2, 400.00),
 (5, 3, 3, 600.00),
 (6, 4, 4, 300.00),
@@ -169,13 +169,10 @@ INSERT INTO Bidder (UserID, AuctionID, ItemID, BidLimit) VALUES
 (10, 8, 8, 1200.00),
 (3, 9, 9, 500.00),
 (4, 10, 10, 1800.00),
-(5, 1, 1, 800.00), -- Multiple bids on the same auction
 (6, 5, 5, 6000.00); -- Multiple bids on the same auction
 
 -- Insert Bids
 INSERT INTO Bid (ItemID, AuctionID, BidderID, BidAmount) VALUES
-(1, 1, 3, 720.00),
-(1, 1, 3, 790.00),
 (2, 2, 4, 350.00),
 (3, 3, 5, 550.00),
 (4, 4, 6, 250.00),
@@ -185,7 +182,6 @@ INSERT INTO Bid (ItemID, AuctionID, BidderID, BidAmount) VALUES
 (8, 8, 10, 1150.00),
 (9, 9, 3, 450.00),
 (10, 10, 4, 1700.00),
-(1, 1, 5, 730.00), -- Another bid on same auction
 (5, 5, 6, 5700.00); -- Another bid on same auction
 
 -- use auction;

@@ -10,10 +10,4 @@
   <li>No bids yet.</li>
   {% endfor %}
 </ul>
-{% if session.get('user_id') %}
-<p>
-  <a href="{{ url_for('bid',item_id=item.ItemID) }}"><button>BID</button></a> {%
-  else %}
-</p>
-<p>You need to <a href="{{ url_for('login') }}">login</a> to place a bid.</p>
-{% endif %} {% endblock %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'layout.html' %} {% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Search Results</h2>
+
+  {% if results %}
+  <div class="row">
+    {% for item in results %}
+    <div class="col-md-4">
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">{{ item.name }}</h5>
+          <p class="card-text">{{ item.description }}</p>
+          <p class="card-text"><strong>Niche:</strong> {{ item.niche }}</p>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="alert alert-warning" role="alert">No results found.</div>
+  {% endif %}
+</div>
+{% endblock %}

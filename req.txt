@@ -1,2 +1,6 @@
 Flask
 mysqlclient
+mysql-connector-python
+datetime
+APScheduler
+flask-apscheduler   
