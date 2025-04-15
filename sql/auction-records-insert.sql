@@ -95,16 +95,16 @@
 use auction; 
 -- Insert Users (Both Sellers and Bidders)
 INSERT INTO User (Username, Password, Balance) VALUES
-('Alice', 'pass123', 1000.00),
-('Bob', 'pass123', 500.00),
-('Charlie', 'pass123', 750.00),
-('David', 'pass123', 1200.00),
-('Eve', 'pass123', 300.00),
-('Frank', 'pass123', 900.00),
-('Grace', 'pass123', 450.00),
-('Hank', 'pass123', 800.00),
-('Ivy', 'pass123', 1000.00),
-('Jack', 'pass123', 600.00);
+('Alice', 'pass123', 10000.00),
+('Bob', 'pass123', 5000.00),
+('Charlie', 'pass123', 7500.00),
+('David', 'pass123', 12000.00),
+('Eve', 'pass123', 3000.00),
+('Frank', 'pass123', 9000.00),
+('Grace', 'pass123', 4500.00),
+('Hank', 'pass123', 8000.00),
+('Ivy', 'pass123', 10000.00),
+('Jack', 'pass123', 6000.00);
 
 -- Insert Categories
 INSERT INTO Category (Title) VALUES
@@ -121,7 +121,7 @@ INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID, WinnerID) 
 ('Sofa', 'A comfortable leather sofa', 'sofa.jpg', 300.00, 2, NULL),
 ('Diamond Ring', 'A beautiful diamond ring', 'ring.jpg', 500.00, 3, NULL),
 ('Painting', 'An exquisite art piece', 'painting.jpg', 200.00, 4, NULL),
-('Sports Car', 'A luxurious sports car', 'car.jpg', 5000.00, 5, NULL),
+('Sports Car', 'A luxurious sports car', 'car.jpg', 2000.00, 5, NULL),
 ('Smartphone', 'Latest model smartphone', 'phone.jpg', 800.00, 1, NULL),
 ('Table', 'Wooden dining table', 'table.jpg', 250.00, 2, NULL),
 ('Gold Necklace', 'Pure gold necklace', 'necklace.jpg', 1000.00, 3, NULL),
@@ -176,7 +176,7 @@ INSERT INTO Bid (ItemID, AuctionID, BidderID, BidAmount) VALUES
 (2, 2, 4, 350.00),
 (3, 3, 5, 550.00),
 (4, 4, 6, 250.00),
-(5, 5, 7, 5200.00),
+(5, 5, 7, 2800.00),
 (6, 6, 8, 850.00),
 (7, 7, 9, 320.00),
 (8, 8, 10, 1150.00),

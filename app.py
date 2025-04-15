@@ -47,12 +47,24 @@ def check_ended_auctions():
 
                 winner = cursor.fetchone()
                 if winner:
-                    print(winner['BidderID'])
                     cursor.execute("""UPDATE Item SET WinnerID = %s WHERE ItemID = %s""", (winner['BidderID'], item_id))
                     db.commit()
+
                     cursor.execute("""UPDATE Seller Set TotalSales = %s Where ItemID = %s""", (winner['BidAmount'], item_id))
                     db.commit()
 
+                    cursor.execute("Select * from User WHERE UserID = %s", ( winner['BidderID'], ))
+                    user = cursor.fetchone()
+                    bal = max(user["Balance"] - winner['BidAmount'], 0)
+                    cursor.execute("UPDATE User SET Balance = %s WHERE UserID = %s", (bal, user['UserID']))
+                    db.commit()
+
+                    # cursor.execute("UPDATE User SET Balance = Balance - %s WHERE UserID = %s", (winner['BidAmount'], user['UserID']))
+                    # db.commit()
+
+                    cursor.execute("UPDATE User SET Balance = Balance + %s WHERE UserID = (SELECT UserID FROM Seller WHERE ItemID = %s)", (winner['BidAmount'], item_id))
+                    db.commit()
+                    
             cursor.close()
 
 d = {1: '''SELECT I.ItemID, I.Name, I.Description, C.Title AS CategoryTitle FROM Item I JOIN Category C ON I.CategoryID = C.CategoryID;''',
@@ -282,19 +294,31 @@ def logout():
 @app.route('/search')
 def search():
     global db
-    query = request.args.get('q', '')
+    query = request.args.get('q',)
     cursor = db.cursor(dictionary=True)
     try:
+        # cursor.execute("""
+        #     SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category 
+        #     FROM Item i
+        #     LEFT JOIN Category c ON i.CategoryID = c.CategoryID
+        #     WHERE i.Name LIKE %s OR c.Title LIKE %s
+        # """, (query,query))
         cursor.execute("""
-            SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category 
-            FROM Item i
-            LEFT JOIN Category c ON i.CategoryID = c.CategoryID
-            WHERE i.Name LIKE %s OR c.Title LIKE %s
-        """, ('%' + query + '%', '%' + query + '%'))
-        results = cursor.fetchall()
+            SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
+            a.StartTime, a.EndTime, MAX(B.BidAmount) AS HighestBid
+            FROM Item i 
+            JOIN Auction a ON i.ItemID = a.ItemID 
+            LEFT Join Bid B on a.AuctionID = B.AuctionID AND i.ItemID = B.ItemID
+            LEFT JOIN Category c ON i.CategoryID = c.CategoryID WHERE a.EndTime > NOW()
+            AND i.Name LIKE %s OR c.Title LIKE %s
+            GROUP BY i.ItemID, a.AuctionID
+            LIMIT 5
+        """, ('%'+query+'%','%'+query+'%'))
+        items = cursor.fetchall()
+        print(items)
     finally:    
         cursor.close()
-    return render_template('search_results.html', results=results, query=query)
+    return render_template('search_results.html', items=items, query=query)
 
 @app.route('/seller_profile')
 def seller_profile():
@@ -340,8 +364,17 @@ def bidder_profile():
     global db
     cursor = db.cursor(dictionary=True)
     try:
-        # cursor.execute("SELECT B.Item_ID, MAX(BidAmount)  from Bid B join Auction A on A.AuctionID=B.AuctionID and A.ItemID=B.ItemID where B.User_ID=%s and A.EndTime>NOW() GROUP BY A.AuctionID, I.ItemID, B.BidderID", (session['primary'],))       
-        
+        # cursor.execute("SELECT B.Item_ID, MAX(BidAmount)  from Bid B join Auction A on A.AuctionID=B.AuctionID and A.ItemID=B.ItemID where B.User_ID=%s and A.EndTime>NOW() GROUP BY A.AuctionID, I.ItemID, B.BidderID", (session['primary'],))
+        add_amount = request.args.get('add_amount')
+        if add_amount:
+            try:
+                add_amount = int(add_amount)
+                x = session['balance'] + add_amount
+                cursor.execute("UPDATE User SET Balance = %s WHERE UserID = %s", (x, session['primary']))
+                db.commit()
+                session['balance'] = x
+            except ValueError:
+                flash("Invalid amount", "danger")
 
         cursor.execute("""
             SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
@@ -469,17 +502,6 @@ def add_item():
         cursor.close()
     return redirect(url_for('seller_profile'))
 
-# @app.route('/schedule_auction/<int:item_id>',methods=['GET',"POST"])
-# def schedule_auction(item_id):
-#     global db
-#     cursor=db.cursor(dictionary=True)
-#     if request.method=='POST':
-#         date=request.form['end_time']
-#         cursor.execute("SELECT MAX(A.AuctionID) as maxi from Auction A")
-#         maxi=cursor.fetchone()
-#         maxi=maxi['maxi']+1
-#         cursor.execute("INSERT INTO Auction (AuctionID, ItemID, Duration, StartTime, EndTime) VALUES (%s,%s, %s - NOW(), NOW(),%s)",(maxi,item_id,date,date))
-
 @app.route('/schedule_auction/<int:item_id>', methods=['POST'])
 def schedule_auction(item_id):
     global db
@@ -544,6 +566,12 @@ def bid(item_id):
         else:
             bidprice = int(11 * (max_bid['MAX(BidAmount)'])/10) 
         if bidprice <= float(session['balance']):
+            cursor.execute("Select SUM(HighestBid) as Total from (Select B.BidderID, Max(BidAmount) as HighestBid from Bid AS B JOIN Auction A on B.AuctionID = A.AuctionID and B.ItemID = A.ItemID WHERE A.EndTime > NOW() and B.ItemID != %s GROUP BY A.AuctionID, A.ItemID, B.BidderID HAVING HighestBid = (Select MAX(BidAmount) FROM Bid B1 WHERE B1.AuctionID = A.AuctionID AND B1.ItemID = A.ItemID)) as T where T.BidderID = %s GROUP BY T.BidderID", (item_id, session['primary']))
+            result = cursor.fetchone()
+            sum = result["Total"] if result else 0
+            if(sum + bidprice > session['balance']):
+                flash("Bid exceeds your balance, please add more money")
+                return redirect(url_for('home')) 
             cursor.execute("SELECT UserID from Seller join Item on Seller.ItemID=Item.ItemID where Item.ItemID=%s",(item_id,))
             result=cursor.fetchone()
             if session['primary']==result['UserID']:

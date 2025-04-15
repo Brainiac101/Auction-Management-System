@@ -35,54 +35,100 @@
   }
 </style>
 
-<div class="profile-container">
-  <h2>Your Active Bids</h2>
+<div
+  style="display: flex; justify-content: space-between; align-items: flex-start"
+>
+  <!-- Left side: Bidding info -->
+  <div class="profile-container" style="flex: 3">
+    <h2>Your Active Bids</h2>
 
-  {% if items %}
-  <div class="card-container">
-    {% for item in items %}
-    <div class="card">
-      <h3>
-        <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
-          {{ item.Name }}
-        </a>
-      </h3>
-      <p><strong>Category:</strong> {{ item.Category }}</p>
-      <p>
-        <strong>Highest Bid:</strong>
-        {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
-        <span class="no-bids">No bids yet</span>
-        {% endif %}
-      </p>
-      <p><strong>End Time:</strong> {{ item.EndTime }}</p>
+    {% if items %}
+    <div class="card-container">
+      {% for item in items %}
+      <div class="card">
+        <h3>
+          <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
+            {{ item.Name }}
+          </a>
+        </h3>
+        <p><strong>Category:</strong> {{ item.Category }}</p>
+        <p>
+          <strong>Highest Bid:</strong>
+          {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
+          <span class="no-bids">No bids yet</span>
+          {% endif %}
+        </p>
+        <p><strong>End Time:</strong> {{ item.EndTime }}</p>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <p class="no-bids">You have not placed any active bids.</p>
-  {% endif %}
-  <h2>Your Winnings</h2>
+    {% else %}
+    <p class="no-bids">You have not placed any active bids.</p>
+    {% endif %}
 
-  {% if items %}
-  <div class="card-container">
-    {% for item in items1 %}
-    <div class="card">
-      <h3>
-        <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
-          {{ item.Name }}
-        </a>
-      </h3>
-      <p><strong>Category:</strong> {{ item.Category }}</p>
-      <p>
-        <strong>Highest Bid:</strong>
-        {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
-        <span class="no-bids">No bids yet</span>
-        {% endif %}
-      </p>
+    <h2>Your Winnings</h2>
+    {% if items1 %}
+    <div class="card-container">
+      {% for item in items1 %}
+      <div class="card">
+        <h3>
+          <a href="{{ url_for('item_detail', item_id=item.ItemID) }}">
+            {{ item.Name }}
+          </a>
+        </h3>
+        <p><strong>Category:</strong> {{ item.Category }}</p>
+        <p>
+          <strong>Winning Bid:</strong>
+          {% if item.HighestBid %} ₹{{ item.HighestBid }} {% else %}
+          <span class="no-bids">No bids yet</span>
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% endif %}
   </div>
-  {% endif %}
+  <div
+    style="
+      flex: 1;
+      padding: 1rem;
+      background-color: #f9f9f9;
+      border-left: 1px solid #ddd;
+      border-radius: 8px;
+    "
+  >
+    <h3>Balance: ₹{{ session['balance'] }}</h3>
+    <form method="get" action="{{ url_for('bidder_profile') }}">
+      <label for="add_amount">Add Balance</label>
+      <input
+        type="number"
+        name="add_amount"
+        id="add_amount"
+        min="1"
+        required
+        placeholder="Enter amount"
+        style="
+          width: 100%;
+          padding: 0.5rem;
+          margin-top: 0.5rem;
+          margin-bottom: 1rem;
+        "
+      />
+      <button
+        type="submit"
+        style="
+          width: 100%;
+          padding: 0.5rem;
+          background-color: #007bff;
+          color: white;
+          border: none;
+          border-radius: 4px;
+        "
+      >
+        Add
+      </button>
+    </form>
+  </div>
 </div>
 
 {% endblock %}
