@@ -213,7 +213,6 @@ def home():
     global db
     cursor = db.cursor(dictionary=True, buffered=True)
     try:
-        
         cursor.execute("""
             SELECT i.ItemID, i.Name, i.BasePrice, c.Title as Category, 
             a.StartTime, a.EndTime, MAX(B.BidAmount) AS HighestBid
@@ -239,6 +238,9 @@ def register():
         username = request.form['username']
         password = request.form['password']
         balance = request.form['balance']
+        if ValueError:
+            flash("Invalid balance amount", "danger")
+            return redirect(url_for('register'))
 
         cursor = db.cursor(dictionary=True, buffered=True)
         try:
@@ -517,6 +519,9 @@ def add_item():
         base_price = request.form['base_price']
         description = request.form['description']
         image_url=request.form['image_url']
+        if ValueError:
+            flash("Invalid Base Price", "danger")
+            return redirect(url_for('register'))
     try:
         cursor.execute("SELECT CategoryID FROM Category WHERE Title = %s", (category,))
         category_id = cursor.fetchone()
@@ -586,12 +591,16 @@ def bid(item_id):
         cursor.execute("SELECT * FROM Item WHERE ItemID = %s", (item_id,))
         item = cursor.fetchone()
         cursor.execute("""
-            SELECT BidAmount 
+            SELECT BidderID, BidAmount 
             FROM Bid 
             WHERE ItemID = %s AND AuctionID = %s
-            ORDER BY BidAmount DESC
+            ORDER BY BidAmount DESC Limit 1
         """, (item_id, auction_id))
-        bids = cursor.fetchall()
+        bids = cursor.fetchone()
+        print(bids)
+        if bids["BidderID"] == session['primary']:
+            flash("You're already winning this auction!", "warning")
+            return redirect(url_for('home'))
         cursor.execute("""SELECT AuctionID from Auction where ItemID = %s AND Auction.EndTime > NOW()""", (item_id,))
         auction = cursor.fetchone()
         if auction is None:
@@ -678,7 +687,7 @@ def run_query(query_id):
         if query_id == 14:
             auction_id = request.args.get('auction_id', type=int)
             if not auction_id:
-                flash("Auction ID is required for this query.", "warning")
+                #flash("Auction ID is required for this query.", "warning")
                 return redirect(url_for('input_query', query_id=query_id))
 
             cursor.execute(query, (auction_id,))

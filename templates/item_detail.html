@@ -1,7 +1,17 @@
 {% extends "layout.html" %} {% block content %}
 <h2>{{ item.Name }}</h2>
+
+<!-- Display image -->
+<img
+  src="{{ item.ImageURL }}"
+  alt="{{ item.Name }}"
+  onerror="this.onerror=null; this.src='https://via.placeholder.com/400x300?text=No+Image';"
+  style="max-width: 500px; height: auto; margin-bottom: 20px"
+/>
+
 <p>{{ item.Description }}</p>
 <p>Base Price: ₹{{ item.BasePrice }}</p>
+
 <h3>Bids</h3>
 <ul>
   {% for bid in bids %}
@@ -10,10 +20,14 @@
   <li>No bids yet.</li>
   {% endfor %}
 </ul>
+
+<!-- Conditional bidding button -->
 {% if session.get('user_id') %}
 <p>
-  <a href="{{ url_for('bid',item_id=item.ItemID) }}"><button>BID</button></a> {%
-  else %}
+  <a href="{{ url_for('bid', item_id=item.ItemID) }}">
+    <button>BID</button>
+  </a>
 </p>
+{% else %}
 <p>You need to <a href="{{ url_for('login') }}">login</a> to place a bid.</p>
 {% endif %} {% endblock %}

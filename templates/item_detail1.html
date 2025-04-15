@@ -1,7 +1,16 @@
 {% extends "layout.html" %} {% block content %}
 <h2>{{ item.Name }}</h2>
+
+<!-- Display the image -->
+<img
+  src="{{ item.ImageURL }}"
+  alt="{{ item.Name }}"
+  style="max-width: 500px; height: auto; margin-bottom: 20px"
+/>
+
 <p>{{ item.Description }}</p>
 <p>Base Price: ₹{{ item.BasePrice }}</p>
+
 <h3>Bids</h3>
 <ul>
   {% for bid in bids %}

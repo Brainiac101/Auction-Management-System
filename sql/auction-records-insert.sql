@@ -121,7 +121,7 @@ INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID, WinnerID) 
 ('Sofa', 'A comfortable leather sofa', 'https://www.orangetree.in/cdn/shop/files/Gallery-1ChiyoL-ShapedSofaBuyOnline.jpg?v=1722852692', 300.00, 2, NULL),
 ('Diamond Ring', 'A beautiful diamond ring', 'https://www.candere.com/media/jewellery/images/C004016__1.jpeg', 500.00, 3, NULL),
 ('Painting', 'An exquisite art piece', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0s5B5TIgNtd8NBG31BBu2v1cCxIZi3AEE2g&s', 200.00, 4, NULL),
-('Sports Car', 'A luxurious sports car', 'https://hips.hearstapps.com/hmg-prod/images/2025-tesla-model-s-1-672d42e172407.jpg?crop=0.465xw:0.466xh;0.285xw,0.361xh&resize=2048:*', 2000.00, 5, NULL),
+('Sports Car', 'A luxurious sports car', 'tesla.jpg', 2000.00, 5, NULL),
 ('Smartphone', 'Latest model smartphone', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK2XvMWeICz2qFWrhL6aGVc_jNLexVcJn3Ow&s', 800.00, 1, NULL),
 ('Table', 'Wooden dining table', 'https://www.hokybo.com/CompanyData/Product/13MD172(HGTG)/1.jpg', 250.00, 2, NULL),
 ('Gold Necklace', 'Pure gold necklace', 'https://www.orra.co.in/media/catalog/product/cache/8706a87b250cd4797f5bf599698c5c7a/o/s/osn23024_1_b0c2jti3rvtvgsgb.jpg', 1000.00, 3, NULL),
