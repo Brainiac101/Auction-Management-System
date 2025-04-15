@@ -570,7 +570,7 @@ def bid(item_id):
             result = cursor.fetchone()
             sum = result["Total"] if result else 0
             if(sum + bidprice > session['balance']):
-                flash("Bid exceeds your balance, please add more money")
+                flash("Bid exceeds your balance, please add more money","warning")
                 return redirect(url_for('home')) 
             cursor.execute("SELECT UserID from Seller join Item on Seller.ItemID=Item.ItemID where Item.ItemID=%s",(item_id,))
             result=cursor.fetchone()
@@ -634,7 +634,7 @@ def run_query(query_id):
         if query_id == 14:
             auction_id = request.args.get('auction_id', type=int)
             if not auction_id:
-                flash("Auction ID is required for this query.", "warning")
+                #flash("Auction ID is required for this query.", "warning")
                 return redirect(url_for('input_query', query_id=query_id))
 
             cursor.execute(query, (auction_id,))
