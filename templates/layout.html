@@ -27,9 +27,11 @@
             <a class="nav-link" href="{{ url_for('auctions') }}">Auctions</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('queries') }}"
+            {% if session.get('user_id')=="admin" %}
+            <a class="nav-link" href="{{ url_for('admin') }}"
               >Query Selection</a
             >
+            {% endif %}
           </li>
         </ul>
 
@@ -50,6 +52,7 @@
               class="dropdown-menu dropdown-menu-end"
               aria-labelledby="userDropdown"
             >
+              {% if session.get('user_id')!="admin"%}
               <li>
                 <a class="dropdown-item" href="{{ url_for('seller_profile') }}"
                   >Your Sales</a
@@ -63,6 +66,7 @@
               <li>
                 <a class="dropdown-item"> Balance: {{ session['balance'] }}</a>
               </li>
+              {% endif %}
               <li>
                 <a class="dropdown-item" href="{{ url_for('logout') }}"
                   >Logout</a
@@ -77,6 +81,7 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('register') }}">Register</a>
           </li>
+
           {% endif %}
         </ul>
       </div>

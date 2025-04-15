@@ -105,7 +105,7 @@ INSERT INTO User (Username, Password, Balance) VALUES
 ('Hank', 'pass123', 8000.00),
 ('Ivy', 'pass123', 10000.00),
 ('Jack', 'pass123', 6000.00);
-
+('admin','admin',0);
 -- Insert Categories
 INSERT INTO Category (Title) VALUES
 ('Electronics'),
@@ -117,16 +117,16 @@ INSERT INTO Category (Title) VALUES
 
 -- Insert Items
 INSERT INTO Item (Name, Description, ImageURL, BasePrice, CategoryID, WinnerID) VALUES
-('Laptop', 'A high-performance gaming laptop', 'laptop.jpg', 700.00, 1, NULL),
-('Sofa', 'A comfortable leather sofa', 'sofa.jpg', 300.00, 2, NULL),
-('Diamond Ring', 'A beautiful diamond ring', 'ring.jpg', 500.00, 3, NULL),
-('Painting', 'An exquisite art piece', 'painting.jpg', 200.00, 4, NULL),
-('Sports Car', 'A luxurious sports car', 'car.jpg', 2000.00, 5, NULL),
-('Smartphone', 'Latest model smartphone', 'phone.jpg', 800.00, 1, NULL),
-('Table', 'Wooden dining table', 'table.jpg', 250.00, 2, NULL),
-('Gold Necklace', 'Pure gold necklace', 'necklace.jpg', 1000.00, 3, NULL),
-('Statue', 'Greek-style marble statue', 'statue.jpg', 350.00, 4, NULL),
-('Motorbike', 'Fast and stylish motorbike', 'bike.jpg', 1500.00, 5, NULL);
+('Laptop', 'A high-performance gaming laptop', 'https://cdn.thewirecutter.com/wp-content/media/2023/06/bestlaptops-2048px-9765.jpg?auto=webp&quality=75&width=1024', 700.00, 1, NULL),
+('Sofa', 'A comfortable leather sofa', 'https://www.orangetree.in/cdn/shop/files/Gallery-1ChiyoL-ShapedSofaBuyOnline.jpg?v=1722852692', 300.00, 2, NULL),
+('Diamond Ring', 'A beautiful diamond ring', 'https://www.candere.com/media/jewellery/images/C004016__1.jpeg', 500.00, 3, NULL),
+('Painting', 'An exquisite art piece', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ0s5B5TIgNtd8NBG31BBu2v1cCxIZi3AEE2g&s', 200.00, 4, NULL),
+('Sports Car', 'A luxurious sports car', 'https://hips.hearstapps.com/hmg-prod/images/2025-tesla-model-s-1-672d42e172407.jpg?crop=0.465xw:0.466xh;0.285xw,0.361xh&resize=2048:*', 2000.00, 5, NULL),
+('Smartphone', 'Latest model smartphone', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK2XvMWeICz2qFWrhL6aGVc_jNLexVcJn3Ow&s', 800.00, 1, NULL),
+('Table', 'Wooden dining table', 'https://www.hokybo.com/CompanyData/Product/13MD172(HGTG)/1.jpg', 250.00, 2, NULL),
+('Gold Necklace', 'Pure gold necklace', 'https://www.orra.co.in/media/catalog/product/cache/8706a87b250cd4797f5bf599698c5c7a/o/s/osn23024_1_b0c2jti3rvtvgsgb.jpg', 1000.00, 3, NULL),
+('Statue', 'Greek-style marble statue', 'https://static.politico.com/f3/13/02216fa649deb5ff8449bc3e6f3c/new-york-daily-life-35725.jpg', 350.00, 4, NULL),
+('Motorbike', 'Fast and stylish motorbike', 'https://m.media-amazon.com/images/I/71kcYIjrDhL.jpg', 1500.00, 5, NULL);
 
 
 -- Insert Auctions (Some items are re-auctioned)
